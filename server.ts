@@ -115,6 +115,22 @@ async function startServer() {
     });
   });
 
+  app.get("/api/auth/user", async (req, res) => {
+    const accessToken = (req as any).session?.spotifyAccessToken;
+    if (!accessToken) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const response = await axios.get("https://api.spotify.com/v1/me", {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      res.json({ email: response.data.email, display_name: response.data.display_name });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.post("/api/auth/logout", (req, res) => {
     (req as any).session.destroy(() => {
       res.json({ success: true });

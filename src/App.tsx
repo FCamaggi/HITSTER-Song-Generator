@@ -47,6 +47,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [artistDetails, setArtistDetails] = useState<Record<string, any>>({});
   const [isPlaying, setIsPlaying] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
 
   // Check auth status on mount
@@ -57,6 +58,15 @@ export default function App() {
         if (data.authenticated) {
           setIsAuthenticated(true);
           setAccessToken(data.accessToken);
+          // Get user info
+          fetch("/api/auth/user")
+            .then(res => res.json())
+            .then(userData => {
+              if (userData.email) {
+                setUserEmail(userData.email);
+              }
+            })
+            .catch(err => console.error("Error fetching user info:", err));
         }
       });
   }, []);
@@ -290,13 +300,25 @@ export default function App() {
             Conectar con Spotify
           </button>
           
-          {error && (
+            {error && (
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-sm font-medium"
             >
               {error}
+              {error.includes("403") && (
+                <div className="mt-3 pt-3 border-t border-red-500/20">
+                  <p className="text-xs text-red-300">
+                    <strong>Posibles soluciones:</strong>
+                  </p>
+                  <ul className="text-xs text-red-300 mt-2 space-y-1 list-disc list-inside">
+                    <li>Verifica que tu email de Spotify esté en "Users and Access" del Dashboard</li>
+                    <li>Asegúrate de autenticarte con el mismo email que agregaste</li>
+                    <li>Solicita "Extended Quota Mode" en el <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener noreferrer" className="underline">Dashboard de Spotify</a></li>
+                  </ul>
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -327,6 +349,12 @@ export default function App() {
           <span className="font-black tracking-tighter text-2xl italic uppercase bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent">HITSTER</span>
         </div>
         <div className="flex items-center gap-4">
+          {userEmail && (
+            <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white/5 rounded-full border border-white/10">
+              <User size={14} className="text-green-500" />
+              <span className="text-xs font-medium text-zinc-400">{userEmail}</span>
+            </div>
+          )}
           <button 
             onClick={handleLogout}
             className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-all"
@@ -381,7 +409,27 @@ export default function App() {
                 </button>
               </div>
             </div>
-            {error && <p className="text-red-400 text-xs font-medium px-2">{error}</p>}
+            {error && (
+              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl">
+                <p className="text-red-400 text-sm font-medium">{error}</p>
+                {error.includes("403") && userEmail && (
+                  <div className="mt-3 pt-3 border-t border-red-500/20 space-y-2">
+                    <p className="text-xs text-red-300">
+                      <strong>Autenticado como:</strong> {userEmail}
+                    </p>
+                    <p className="text-xs text-red-300">
+                      <strong>Solución:</strong>
+                    </p>
+                    <ol className="text-xs text-red-300 space-y-1 list-decimal list-inside ml-2">
+                      <li>Ve al <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener noreferrer" className="underline font-bold">Dashboard de Spotify</a></li>
+                      <li>Abre tu app y ve a "Settings" → "Users and Access"</li>
+                      <li>Asegúrate que <strong>{userEmail}</strong> esté en la lista</li>
+                      <li>O solicita "Extended Quota Mode" para usar la app sin restricciones</li>
+                    </ol>
+                  </div>
+                )}
+              </div>
+            )}
             {tracks.length > 0 && (
               <div className="flex items-center gap-2 px-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
