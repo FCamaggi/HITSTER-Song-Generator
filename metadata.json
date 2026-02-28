@@ -1,0 +1,5 @@
+{
+  "name": "HITSTER Song Generator",
+  "description": "Generador de canciones para el juego HITSTER con integración de Spotify.",
+  "requestFramePermissions": []
+}
