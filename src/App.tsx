@@ -49,6 +49,7 @@ export default function App() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState<string | null>(null);
+  const [hasPremium, setHasPremium] = useState<boolean | null>(null);
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
 
   // Check auth status on mount
@@ -65,6 +66,9 @@ export default function App() {
             .then(userData => {
               if (userData.email) {
                 setUserEmail(userData.email);
+              }
+              if (userData.product) {
+                setHasPremium(userData.product === "premium");
               }
             })
             .catch(err => console.error("Error fetching user info:", err));
@@ -98,6 +102,9 @@ export default function App() {
           .then(userData => {
             if (userData.email) {
               setUserEmail(userData.email);
+            }
+            if (userData.product) {
+              setHasPremium(userData.product === "premium");
             }
           })
           .catch(err => console.error("Error fetching user info:", err));
@@ -378,6 +385,36 @@ export default function App() {
           </button>
         </div>
       </header>
+
+      {/* Premium Warning */}
+      {hasPremium === false && (
+        <div className="bg-red-500/10 border-b border-red-500/20 p-4">
+          <div className="max-w-5xl mx-auto">
+            <div className="flex items-start gap-3">
+              <div className="text-red-500 mt-0.5">⚠️</div>
+              <div className="flex-1">
+                <h3 className="text-red-400 font-bold text-sm mb-1">Spotify Free Detectado</h3>
+                <p className="text-red-300 text-xs leading-relaxed">
+                  Las apps en Development Mode deployed requieren <strong>Spotify Premium</strong>. 
+                  Por eso recibes errores 403 aunque estés autenticado.
+                </p>
+                <p className="text-red-200 text-xs mt-2">
+                  💡 <strong>Solución:</strong> Ejecuta la app localement con <code className="bg-red-500/20 px-1 rounded">npm run dev</code> 
+                  donde NO necesitas Premium, o upgradeа Spotify Premium.
+                </p>
+                <a 
+                  href="https://github.com/FCamaggi/HITSTER-Song-Generator/blob/master/FORBIDDEN_403.md" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 mt-2 text-xs font-bold text-red-300 hover:text-red-200 underline"
+                >
+                  Ver guía completa →
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="max-w-5xl mx-auto p-6 md:p-12 space-y-12 relative z-10">
         {/* Playlist Input Section */}

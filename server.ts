@@ -154,7 +154,48 @@ async function startServer() {
       const response = await axios.get("https://api.spotify.com/v1/me", {
         headers: { Authorization: `Bearer ${accessToken}` }
       });
-      res.json({ email: response.data.email, display_name: response.data.display_name });
+      res.json({ 
+        email: response.data.email, 
+        display_name: response.data.display_name,
+        product: response.data.product, // "premium" or "free"
+        country: response.data.country
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/debug/spotify-status", async (req, res) => {
+    const accessToken = (req as any).session?.spotifyAccessToken;
+    if (!accessToken) {
+      return res.status(401).json({ 
+        authenticated: false,
+        message: "No autenticado. Conéctate con Spotify primero." 
+      });
+    }
+
+    try {
+      const userResponse = await axios.get("https://api.spotify.com/v1/me", {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+
+      const hasPremium = userResponse.data.product === "premium";
+      
+      res.json({
+        authenticated: true,
+        user: {
+          email: userResponse.data.email,
+          display_name: userResponse.data.display_name,
+          product: userResponse.data.product,
+          country: userResponse.data.country
+        },
+        spotify_premium: hasPremium,
+        diagnosis: {
+          can_use_app: hasPremium,
+          issue: !hasPremium ? "⚠️ PROBLEMA ENCONTRADO: Necesitas Spotify Premium para usar apps en Development Mode deployed. Usa localhost o upgradeа Premium." : "✅ Todo bien con Premium",
+          recommendation: !hasPremium ? "Ejecuta 'npm run dev' localmente en localhost:3000 donde NO necesitas Premium" : "Deberías poder usar la app sin problemas"
+        }
+      });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -269,11 +310,57 @@ async function startServer() {
         fullError: error.response?.data
       });
       
-      if (status === 403) {
-        // Check if it's a Development Mode restriction
+      if (status === 403 && message === "Forbidden") {
+        // Specific 403 "Forbidden" error - typical of Development Mode restrictions
+        message = `Error 403: Acceso denegado a la playlist.
+
+🔍 CAUSAS POSIBLES:
+
+1. ⚠️ DESARROLLO MODE - Restricción de Spotify:
+   Tu app está en "Development Mode" que tiene limitaciones SEVERAS.
+   Aunque tu email esté en la whitelist, hay restricciones adicionales.
+
+2. 🔑 El propietario de la app DEBE tener Spotify PREMIUM:
+   ¿Tienes Spotify Premium? Es REQUERIDO para apps en Development Mode.
+   Si solo tienes Spotify Free, la app NO funcionará.
+
+3. ⏰ Delay de Propagación:
+   Después de agregar un usuario, espera 15-30 minutos antes de autenticarte.
+
+4. 🔄 Token Antiguo:
+   El token se generó ANTES de agregar tu email a la whitelist.
+   
+📋 SOLUCIÓN PASO A PASO:
+
+1. Verifica Spotify Premium:
+   - Ve a spotify.com/account
+   - Confirma que tienes "Spotify Premium"
+   - Si no, ¡aquí está el problema! Debes upgradearlo.
+
+2. Si tienes Premium:
+   - Dashboard → Tu App → Settings → User Management
+   - ELIMINA tu email de la lista
+   - ESPERA 5 minutos
+   - AGRÉGALO de nuevo
+   - ESPERA 15-20 minutos
+   
+3. Después de 20 minutos:
+   - Cierra sesión en esta app
+   - Borra cookies del navegador
+   - Vuelve a autenticarte
+   
+4. Prueba con TU PROPIA playlist:
+   - Crea una playlist en TU cuenta
+   - Hazla pública
+   - Usa esa en lugar de la oficial
+
+⚠️ NOTA IMPORTANTE: Development Mode es MUY limitado.
+   Si esto no funciona, considera usar la app solo localmente (localhost).`;
+      } else if (status === 403) {
+        // Other 403 errors
         if (message.includes("Development") || message.includes("insufficient client scope")) {
-          message = `Error 403: Tu app de Spotify está en modo Development. 
-          
+          message = `Error 403: Tu app de Spotify está en modo Development.
+
 Soluciones:
 1. RECOMENDADO: Solicita "Extended Quota Mode" en el Dashboard de Spotify
 2. TEMPORAL: Asegúrate de que tu email (fabrizocama@gmail.com) esté agregado correctamente en 'Users and Access'
