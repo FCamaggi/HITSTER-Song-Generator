@@ -87,6 +87,16 @@ export default function App() {
       if (event.data?.type === 'OAUTH_AUTH_SUCCESS') {
         setIsAuthenticated(true);
         setAccessToken(event.data.accessToken);
+        
+        // Get user info after successful auth
+        fetch("/api/auth/user")
+          .then(res => res.json())
+          .then(userData => {
+            if (userData.email) {
+              setUserEmail(userData.email);
+            }
+          })
+          .catch(err => console.error("Error fetching user info:", err));
       }
     };
     window.addEventListener('message', handleMessage);
