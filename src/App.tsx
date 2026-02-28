@@ -65,7 +65,14 @@ export default function App() {
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       const origin = event.origin;
-      if (!origin.endsWith('.run.app') && !origin.includes('localhost')) return;
+      // Allow messages from same origin or localhost
+      const allowedOrigins = [
+        window.location.origin,
+        'http://localhost:3000',
+        'https://localhost:3000'
+      ];
+      
+      if (!allowedOrigins.includes(origin) && !origin.endsWith('.onrender.com')) return;
       
       if (event.data?.type === 'OAUTH_AUTH_SUCCESS') {
         setIsAuthenticated(true);
