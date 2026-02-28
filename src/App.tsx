@@ -262,7 +262,8 @@ export default function App() {
   const getDecade = (date: string) => {
     const year = parseInt(date.split("-")[0]);
     const decade = Math.floor(year / 10) * 10;
-    return `años ${decade.toString().slice(-2)}`;
+    const decadeStr = decade.toString();
+    return `${decadeStr}s`;
   };
 
   if (!isAuthenticated) {
@@ -403,7 +404,7 @@ export default function App() {
                   animate={{ opacity: 1, y: 0, rotateX: 0 }}
                   exit={{ opacity: 0, y: -40, rotateX: -20 }}
                   transition={{ type: "spring", damping: 20, stiffness: 100 }}
-                  className="w-full max-w-[340px] sm:max-w-[380px] aspect-[3/4.2] relative perspective-1000"
+                  className="w-full max-w-[380px] sm:max-w-[480px] md:max-w-[520px] aspect-[3/4.2] relative perspective-1000"
                 >
                   {/* The "Card" */}
                   <div className={`w-full h-full rounded-[3rem] overflow-hidden border transition-all duration-1000 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] ${showInfo ? 'border-green-500/50 bg-zinc-900' : 'border-white/10 bg-[#111]'}`}>
@@ -424,36 +425,38 @@ export default function App() {
                           </p>
                         </div>
                         
-                        {/* Audio Controls (Custom or Masked Spotify) */}
+                        {/* Audio Controls */}
                         <div className="pt-8 w-full space-y-4">
                           {currentTrack.preview_url ? (
                             <button 
                               onClick={togglePlay}
-                              className="w-16 h-16 bg-white text-black rounded-full flex items-center justify-center mx-auto shadow-xl hover:scale-110 active:scale-95 transition-all"
+                              className="w-20 h-20 bg-white text-black rounded-full flex items-center justify-center mx-auto shadow-xl hover:scale-110 active:scale-95 transition-all"
                             >
-                              {isPlaying ? <div className="w-6 h-6 bg-black rounded-sm" /> : <Play size={32} fill="currentColor" className="ml-1" />}
+                              {isPlaying ? (
+                                <div className="flex flex-col items-center justify-center gap-1">
+                                  <div className="flex gap-1">
+                                    <div className="w-1 h-4 bg-black rounded-full" />
+                                    <div className="w-1 h-4 bg-black rounded-full" />
+                                  </div>
+                                </div>
+                              ) : (
+                                <Play size={36} fill="currentColor" className="ml-1" />
+                              )}
                             </button>
                           ) : (
-                            <div className="relative w-full h-20 rounded-2xl overflow-hidden bg-black border border-white/5">
-                              {/* Mask to hide song info */}
-                              <div className="absolute inset-0 z-10 bg-zinc-900 flex items-center justify-start px-6 pointer-events-none">
-                                <div className="flex items-center gap-3">
-                                  <Play size={16} className="text-green-500 animate-pulse" />
-                                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Dale al Play para escuchar</span>
-                                </div>
+                            <div className="space-y-3">
+                              <div className="text-center">
+                                <p className="text-zinc-500 text-xs font-bold uppercase tracking-wider mb-3">Vista previa no disponible</p>
+                                <a 
+                                  href={`https://open.spotify.com/track/${currentTrack.id}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-2 px-6 py-3 bg-green-500 hover:bg-green-400 text-black font-bold rounded-full transition-all text-sm"
+                                >
+                                  <ExternalLink size={16} />
+                                  Escuchar en Spotify
+                                </a>
                               </div>
-                              {/* The actual player is behind but clickable on the left side where the play button is */}
-                              <iframe 
-                                src={`https://open.spotify.com/embed/track/${currentTrack.id}?utm_source=generator&theme=0`} 
-                                width="100%" 
-                                height="80" 
-                                frameBorder="0" 
-                                allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" 
-                                loading="lazy"
-                                className="opacity-100"
-                              ></iframe>
-                              {/* Second mask for the right side to ensure info is hidden even if iframe shifts */}
-                              <div className="absolute top-0 right-0 bottom-0 left-20 z-20 bg-zinc-900 pointer-events-none border-l border-white/5" />
                             </div>
                           )}
                           
@@ -490,39 +493,38 @@ export default function App() {
                               initial={{ x: 20, opacity: 0 }}
                               animate={{ x: 0, opacity: 1 }}
                               transition={{ delay: 0.3 }}
-                              className="absolute top-8 right-8 bg-green-500 text-black font-black text-5xl px-6 py-3 rounded-[1.5rem] shadow-2xl transform rotate-3 border-4 border-black"
+                              className="absolute top-4 sm:top-6 right-4 sm:right-6 bg-green-500 text-black font-black text-4xl sm:text-5xl md:text-6xl px-4 sm:px-6 py-2 sm:py-3 rounded-[1.5rem] shadow-2xl transform rotate-3 border-4 border-black"
                             >
                               {getYear(currentTrack.album.release_date)}
                             </motion.div>
                           </div>
 
                           {/* Info */}
-                          <div className="p-10 flex-1 flex flex-col justify-between bg-zinc-900">
-                            <div className="space-y-3">
-                              <h3 className="text-3xl font-black leading-[0.9] tracking-tighter uppercase italic text-white">
+                          <div className="p-6 sm:p-8 md:p-10 flex-1 flex flex-col justify-between bg-zinc-900">
+                            <div className="space-y-4">
+                              <h3 className="text-2xl sm:text-3xl md:text-4xl font-black leading-[0.95] tracking-tighter uppercase italic text-white break-words">
                                 {currentTrack.name}
                               </h3>
-                              <div className="flex items-center gap-2 text-green-500/80">
-                                {getArtistType(currentTrack) === "feat" ? <Users size={16} /> : <User size={16} />}
-                                <span className="font-bold text-sm uppercase tracking-wider">
-                                  {currentTrack.artists.map(a => a.name).join(", ")}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2 text-zinc-400">
-                                <Calendar size={14} />
-                                <span className="font-bold text-xs uppercase tracking-wider">
-                                  {getDecade(currentTrack.album.release_date)}
-                                </span>
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-green-500/80">
+                                  {getArtistType(currentTrack) === "feat" ? <Users size={18} /> : <User size={18} />}
+                                  <span className="font-bold text-sm sm:text-base uppercase tracking-wider break-words">
+                                    {currentTrack.artists.map(a => a.name).join(", ")}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 text-zinc-400">
+                                  <Calendar size={16} />
+                                  <span className="font-bold text-sm uppercase tracking-wider">
+                                    Década: {getDecade(currentTrack.album.release_date)}
+                                  </span>
+                                </div>
                               </div>
                             </div>
 
-                            <div className="flex items-center justify-between pt-8 border-t border-white/5">
-                              <div className="flex items-center gap-2 text-zinc-500 text-[10px] font-bold uppercase tracking-[0.2em]">
-                                <Calendar size={12} />
-                                <span className="truncate max-w-[150px]">{currentTrack.album.name}</span>
-                              </div>
-                              <div className="bg-white/5 px-3 py-1.5 rounded-lg text-zinc-400 text-[10px] font-black tracking-widest uppercase">
-                                {getArtistType(currentTrack) === "feat" ? "FEAT" : "ORIGINAL"}
+                            <div className="pt-6 border-t border-white/5">
+                              <div className="flex items-center gap-2 text-zinc-500 text-xs font-bold uppercase tracking-wider">
+                                <Music size={14} />
+                                <span className="truncate">{currentTrack.album.name}</span>
                               </div>
                             </div>
                           </div>
@@ -533,11 +535,11 @@ export default function App() {
                 </motion.div>
 
                 {/* Sound Controls & Player */}
-                <div className="w-full max-w-md space-y-6">
-                  <div className="flex items-center justify-center gap-6">
+                <div className="w-full max-w-lg px-4 sm:px-0 space-y-6">
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
                     <button 
                       onClick={() => setShowInfo(!showInfo)}
-                      className={`flex items-center gap-3 px-10 py-5 rounded-3xl font-black uppercase italic tracking-tighter transition-all active:scale-95 ${showInfo ? 'bg-zinc-800 text-zinc-400 border border-white/5' : 'bg-white text-black hover:bg-zinc-200 shadow-xl shadow-white/10'}`}
+                      className={`w-full sm:w-auto flex items-center justify-center gap-3 px-8 sm:px-10 py-4 sm:py-5 rounded-3xl font-black uppercase italic tracking-tighter transition-all active:scale-95 ${showInfo ? 'bg-zinc-800 text-zinc-400 border border-white/5' : 'bg-white text-black hover:bg-zinc-200 shadow-xl shadow-white/10'}`}
                     >
                       {showInfo ? <EyeOff size={24} /> : <Eye size={24} />}
                       {showInfo ? "Ocultar" : "Revelar"}
@@ -545,7 +547,7 @@ export default function App() {
                     
                     <button 
                       onClick={() => pickRandomTrack()}
-                      className="flex items-center gap-3 px-10 py-5 rounded-3xl bg-green-500 text-black font-black uppercase italic tracking-tighter hover:bg-green-400 active:scale-95 transition-all shadow-xl shadow-green-500/20"
+                      className="w-full sm:w-auto flex items-center justify-center gap-3 px-8 sm:px-10 py-4 sm:py-5 rounded-3xl bg-green-500 text-black font-black uppercase italic tracking-tighter hover:bg-green-400 active:scale-95 transition-all shadow-xl shadow-green-500/20"
                     >
                       <SkipForward size={24} fill="currentColor" />
                       Siguiente
