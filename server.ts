@@ -37,6 +37,31 @@ async function startServer() {
   const APP_URL = process.env.APP_URL || `http://localhost:${PORT}`;
   const REDIRECT_URI = `${APP_URL}/auth/callback`;
 
+  // Helper function to refresh access token
+  async function refreshAccessToken(refreshToken: string) {
+    try {
+      const response = await axios.post(
+        "https://accounts.spotify.com/api/token",
+        new URLSearchParams({
+          grant_type: "refresh_token",
+          refresh_token: refreshToken,
+        }).toString(),
+        {
+          headers: {
+            Authorization: `Basic ${Buffer.from(
+              `${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`
+            ).toString("base64")}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        }
+      );
+      return response.data.access_token;
+    } catch (error) {
+      console.error("Error refreshing token:", error);
+      return null;
+    }
+  }
+
   // --- Auth Routes ---
 
   app.get("/api/auth/url", (req, res) => {
@@ -92,7 +117,11 @@ async function startServer() {
           <body>
             <script>
               if (window.opener) {
-                window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS', accessToken: '${access_token}' }, '*');
+                window.opener.postMessage({ 
+                  type: 'OAUTH_AUTH_SUCCESS', 
+                  accessToken: '${access_token}',
+                  refreshToken: '${refresh_token}'
+                }, '*');
                 window.close();
               } else {
                 window.location.href = '/';
@@ -159,23 +188,70 @@ async function startServer() {
 
     try {
       // First, verify the token is valid by getting user info
+      let validToken = accessToken;
+      let userEmail = "desconocido";
+      
       try {
         const userCheck = await axios.get("https://api.spotify.com/v1/me", {
-          headers: { Authorization: `Bearer ${accessToken}` },
+          headers: { Authorization: `Bearer ${validToken}` },
           timeout: 5000
         });
-        console.log("✅ Token válido para usuario:", userCheck.data.email);
+        userEmail = userCheck.data.email;
+        console.log("✅ Token válido para usuario:", userEmail);
       } catch (userError: any) {
         console.error("❌ Error verificando usuario:", userError.response?.status, userError.response?.data);
-        return res.status(userError.response?.status || 401).json({ 
-          error: `Token inválido o expirado. Por favor cierra sesión y vuelve a conectarte.` 
-        });
+        
+        // If token expired (401), try to refresh it
+        if (userError.response?.status === 401 && (req as any).session?.spotifyRefreshToken) {
+          console.log("🔄 Intentando refrescar token...");
+          const newToken = await refreshAccessToken((req as any).session.spotifyRefreshToken);
+          
+          if (newToken) {
+            validToken = newToken;
+            (req as any).session.spotifyAccessToken = newToken;
+            console.log("✅ Token refrescado exitosamente");
+            
+            // Verify again with new token
+            try {
+              const userCheck2 = await axios.get("https://api.spotify.com/v1/me", {
+                headers: { Authorization: `Bearer ${validToken}` },
+                timeout: 5000
+              });
+              userEmail = userCheck2.data.email;
+              console.log("✅ Token refrescado válido para usuario:", userEmail);
+            } catch (e) {
+              return res.status(401).json({ 
+                error: `Token expirado. Por favor cierra sesión y vuelve a conectarte.` 
+              });
+            }
+          } else {
+            return res.status(401).json({ 
+              error: `Token expirado. Por favor cierra sesión y vuelve a conectarte.` 
+            });
+          }
+        } else if (userError.response?.status === 403) {
+          return res.status(403).json({ 
+            error: `Error 403: Tu email no está autorizado para usar esta app.
+            
+🔧 Solución:
+1. Ve al Dashboard de Spotify → Tu App → Settings → Users and Access
+2. Agrega tu email a la lista de usuarios permitidos
+3. Espera 5-10 minutos
+4. Cierra sesión en esta app y vuelve a conectarte
+
+⚠️ IMPORTANTE: Tu app está en Development Mode. Solo usuarios agregados manualmente pueden usarla.` 
+          });
+        } else {
+          return res.status(userError.response?.status || 401).json({ 
+            error: `Error de autenticación. Por favor cierra sesión y vuelve a conectarte.` 
+          });
+        }
       }
 
       const response = await axios.get(
         `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`,
         {
-          headers: { Authorization: `Bearer ${accessToken}` },
+          headers: { Authorization: `Bearer ${validToken}` },
           timeout: 10000
         }
       );

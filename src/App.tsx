@@ -48,6 +48,7 @@ export default function App() {
   const [artistDetails, setArtistDetails] = useState<Record<string, any>>({});
   const [isPlaying, setIsPlaying] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
 
   // Check auth status on mount
@@ -87,6 +88,9 @@ export default function App() {
       if (event.data?.type === 'OAUTH_AUTH_SUCCESS') {
         setIsAuthenticated(true);
         setAccessToken(event.data.accessToken);
+        if (event.data.refreshToken) {
+          setRefreshToken(event.data.refreshToken);
+        }
         
         // Get user info after successful auth
         fetch("/api/auth/user")
