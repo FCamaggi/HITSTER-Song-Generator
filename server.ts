@@ -158,6 +158,20 @@ async function startServer() {
     console.log("Usando ID final para Spotify:", playlistId);
 
     try {
+      // First, verify the token is valid by getting user info
+      try {
+        const userCheck = await axios.get("https://api.spotify.com/v1/me", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+          timeout: 5000
+        });
+        console.log("✅ Token válido para usuario:", userCheck.data.email);
+      } catch (userError: any) {
+        console.error("❌ Error verificando usuario:", userError.response?.status, userError.response?.data);
+        return res.status(userError.response?.status || 401).json({ 
+          error: `Token inválido o expirado. Por favor cierra sesión y vuelve a conectarte.` 
+        });
+      }
+
       const response = await axios.get(
         `https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=100`,
         {
@@ -169,13 +183,37 @@ async function startServer() {
       res.json(response.data);
     } catch (error: any) {
       const status = error.response?.status || 500;
-      let message = error.response?.data?.error?.message || "Error al conectar con Spotify";
+      const spotifyError = error.response?.data?.error;
+      let message = spotifyError?.message || "Error al conectar con Spotify";
+      
+      console.error("Error en Spotify API Proxy:", {
+        status,
+        message,
+        playlistId,
+        fullError: error.response?.data
+      });
       
       if (status === 403) {
-        message = "Error 403: Acceso denegado. Asegúrate de que tu email de Spotify esté en la lista 'Users and Access' de tu App en el Spotify Developer Dashboard.";
+        // Check if it's a Development Mode restriction
+        if (message.includes("Development") || message.includes("insufficient client scope")) {
+          message = `Error 403: Tu app de Spotify está en modo Development. 
+          
+Soluciones:
+1. RECOMENDADO: Solicita "Extended Quota Mode" en el Dashboard de Spotify
+2. TEMPORAL: Asegúrate de que tu email (fabrizocama@gmail.com) esté agregado correctamente en 'Users and Access'
+3. Después de agregar el email, cierra sesión y vuelve a autenticarte
+
+Nota: El error persiste porque la app necesita Extended Quota Mode para funcionar sin restricciones.`;
+        } else {
+          message = `Error 403: ${message}
+          
+Verifica:
+- Que la playlist sea pública o de tu propiedad
+- Que tu app tenga los permisos necesarios (playlist-read-private, playlist-read-collaborative)
+- Considera solicitar Extended Quota Mode en el Dashboard`;
+        }
       }
       
-      console.error("Error en Spotify API Proxy:", status, message);
       res.status(status).json({ error: message });
     }
   });

@@ -421,21 +421,31 @@ export default function App() {
             </div>
             {error && (
               <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl">
-                <p className="text-red-400 text-sm font-medium">{error}</p>
+                <p className="text-red-400 text-sm font-medium whitespace-pre-line">{error}</p>
                 {error.includes("403") && userEmail && (
-                  <div className="mt-3 pt-3 border-t border-red-500/20 space-y-2">
-                    <p className="text-xs text-red-300">
-                      <strong>Autenticado como:</strong> {userEmail}
-                    </p>
-                    <p className="text-xs text-red-300">
-                      <strong>Solución:</strong>
-                    </p>
-                    <ol className="text-xs text-red-300 space-y-1 list-decimal list-inside ml-2">
-                      <li>Ve al <a href="https://developer.spotify.com/dashboard" target="_blank" rel="noopener noreferrer" className="underline font-bold">Dashboard de Spotify</a></li>
-                      <li>Abre tu app y ve a "Settings" → "Users and Access"</li>
-                      <li>Asegúrate que <strong>{userEmail}</strong> esté en la lista</li>
-                      <li>O solicita "Extended Quota Mode" para usar la app sin restricciones</li>
-                    </ol>
+                  <div className="mt-3 pt-3 border-t border-red-500/20 space-y-3">
+                    <div>
+                      <p className="text-xs text-red-300">
+                        <strong>📧 Autenticado como:</strong> {userEmail}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-red-300 font-bold mb-2">
+                        💡 Causa probable: Tu app está en Development Mode
+                      </p>
+                      <p className="text-xs text-red-200 mb-2">
+                        Agregar tu email en "Users and Access" NO es suficiente. Necesitas solicitar <strong>Extended Quota Mode</strong>.
+                      </p>
+                      <a 
+                        href="https://github.com/FCamaggi/HITSTER-Song-Generator/blob/master/TROUBLESHOOTING_403.md" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 rounded-lg text-xs font-bold text-red-100 transition-all"
+                      >
+                        <ExternalLink size={14} />
+                        Ver Guía Completa para Solucionar
+                      </a>
+                    </div>
                   </div>
                 )}
               </div>

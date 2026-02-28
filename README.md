@@ -50,6 +50,27 @@ See [DEPLOY.md](DEPLOY.md) for detailed deployment instructions on Render.
 
 ---
 
+## ⚠️ Common Issues
+
+### Error 403: Access Denied
+
+If you get a **403 error** even after adding your email to "Users and Access":
+
+**Root cause:** Spotify apps start in **Development Mode** which has severe limitations, even for whitelisted users.
+
+**Solution:** Request **Extended Quota Mode**
+
+👉 **[Complete troubleshooting guide](TROUBLESHOOTING_403.md)** 👈
+
+**Quick fix:**
+1. Go to [Spotify Dashboard](https://developer.spotify.com/dashboard)
+2. Open your app → **"Quota Extension"**
+3. Click **"Request Extension"**
+4. Fill the form (see [TROUBLESHOOTING_403.md](TROUBLESHOOTING_403.md) for exact answers)
+5. Wait 1-7 days for approval
+
+---
+
 ## 🔧 Configuration
 
 ### Required Environment Variables
